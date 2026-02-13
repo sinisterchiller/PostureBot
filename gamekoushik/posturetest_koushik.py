@@ -32,6 +32,16 @@ last_print = 0.0
 NOSE = 0
 LEFT_SHOULDER = 11
 RIGHT_SHOULDER = 12
+LEFT_EAR = 7
+RIGHT_EAR = 8
+LEFT_EYE = 2
+RIGHT_EYE = 5
+
+def tilt_deg(a, b):
+    # a,b are landmarks with .x .y in normalized coords
+    dx = b.x - a.x
+    dy = b.y - a.y
+    return math.degrees(math.atan2(dy, dx))
 
 while True:
     ok, frame_bgr = cap.read()
@@ -44,7 +54,7 @@ while True:
     timestamp_ms = int(time.time() * 1000)
     result = landmarker.detect_for_video(mp_image, timestamp_ms)
 
-    posture = {"type": "NO_PERSON", "severity": 0, "confidence": 0.0}
+    metadata = {"type": "NO_PERSON"}
 
     if result.pose_landmarks and len(result.pose_landmarks) > 0:
         lm = result.pose_landmarks[0]  # first detected person
@@ -52,6 +62,10 @@ while True:
         nose = lm[NOSE]
         l_sh = lm[LEFT_SHOULDER]
         r_sh = lm[RIGHT_SHOULDER]
+        l_eye = lm[LEFT_EYE]
+        r_eye = lm[RIGHT_EYE]
+        l_ear = lm[LEFT_EAR]
+        r_ear = lm[RIGHT_EAR]
 
         sh_cx = (l_sh.x + r_sh.x) / 2.0
 
@@ -67,20 +81,35 @@ while True:
                 vis.append(float(p.visibility))
         conf = sum(vis) / len(vis) if vis else 0.7  # fallback
 
-        posture = {
+        vistilt = []
+        for p in (l_ear, l_eye, r_ear, r_eye):
+            if hasattr(p, "visibility") and p.visibility is not None:
+                vis.append(float(p.visibility))
+        tiltangle = tilt_deg(r_ear,l_ear)
+        if tiltangle > 90:
+            tiltangle -= 180
+        elif tiltangle < -90:
+            tiltangle += 180
+        #print(tiltangle)
+
+        metadata = {
             "type": "POSTURE_BAD" if severity >= 50 else "POSTURE_OK",
             "severity": severity,
             "confidence": float(clamp(conf)),
+            "headtiltangle": tiltangle,
+            "headdirection_left": True if tiltangle > 15 else False ,
+            "headdirection_right": True if tiltangle < -15 else False ,
+            
         }
 
         try:
-            requests.post(API_URL, json=posture, timeout=0.3)
+            requests.post(API_URL, json=metadata, timeout=0.3)
         except requests.exceptions.RequestException:
             pass
 
     now = time.time()
     if now - last_print > 1.0:
-        print(posture)
+        print(metadata)
         last_print = now
 
     cv2.imshow("camera", frame_bgr)
