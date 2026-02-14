@@ -43,6 +43,8 @@ def tilt_deg(a, b):
     dy = b.y - a.y
     return math.degrees(math.atan2(dy, dx))
 
+
+
 while True:
     ok, frame_bgr = cap.read()
     if not ok:
@@ -90,7 +92,18 @@ while True:
             tiltangle -= 180
         elif tiltangle < -90:
             tiltangle += 180
-        #print(tiltangle)
+
+        min_angle = 10.0   # start reacting
+        max_angle = 30.0   # full strength
+
+        magnitude = abs(tiltangle)
+
+        strength = (magnitude - min_angle) / (max_angle - min_angle)
+        strength = clamp(strength, 0.0, 1.0)
+
+        axis = strength * strength*(1 if tiltangle >= 0 else -1)
+
+        #print(axis)
 
         metadata = {
             "type": "POSTURE_BAD" if severity >= 50 else "POSTURE_OK",
@@ -99,7 +112,6 @@ while True:
             "headtiltangle": tiltangle,
             "headdirection_left": True if tiltangle > 15 else False ,
             "headdirection_right": True if tiltangle < -15 else False ,
-            
         }
 
         try:
