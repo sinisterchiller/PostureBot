@@ -124,7 +124,7 @@ while True:
     #     print(metadata)
     #     last_print = now
 
-    cv2.imshow("camera", frame_bgr)
+    #cv2.imshow("camera", frame_bgr)
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 

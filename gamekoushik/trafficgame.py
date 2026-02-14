@@ -1,6 +1,8 @@
 import random
 import pygame
 import sys
+import os
+import subprocess
 
 # -------- Config --------
 W, H = 480, 720
@@ -96,6 +98,18 @@ def main():
     pygame.init()
     pygame.display.set_caption("Traffic Escape (Fontless)")
     screen = pygame.display.set_mode((W, H))
+    pygame.init()
+    pygame.display.set_caption("Traffic Escape (Fontless)")
+    screen = pygame.display.set_mode((W, H))
+    # Bring window to front on macOS when launched from another process
+    try:
+        pid = os.getpid()
+        subprocess.run(
+            ["osascript", "-e", f'tell application "System Events" to set frontmost of first process whose unix id is {pid} to true'],
+            check=False, capture_output=True, timeout=1
+        )
+    except Exception:
+        pass
     clock = pygame.time.Clock()
 
     player_lane = 1

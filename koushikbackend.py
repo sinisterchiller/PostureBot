@@ -4,6 +4,7 @@ import subprocess
 import pyautogui
 import time
 import requests
+import random
 
 api = FastAPI()
 
@@ -62,8 +63,9 @@ def consequence(data: posturedata):
         if elapsedtime >= 5 and not api.state.warning_sent:
             subprocess.Popen(["pkill", "-f", "posturemonitor.py"])
             subprocess.Popen(["pkill", "-f", "koushikbackend.py"])
+            randomgame = random.randint(0,1)
             try:
-                requests.post(API_URL, json={"game": "0"}, timeout=0.3)
+                requests.post(API_URL, json={"game": str(randomgame)}, timeout=0.3)
                 api.state.warning_sent = True
             except requests.exceptions.RequestException:
                 pass

@@ -3,6 +3,7 @@ from pydantic import BaseModel
 import subprocess
 from pathlib import Path
 from fastapi.middleware.cors import CORSMiddleware
+import time
 
 api = FastAPI()
 
@@ -39,6 +40,7 @@ def opengame(data:command):
         subprocess.Popen(["pkill", "-f", "posturetest_koushik.py"])
         subprocess.Popen(["pkill", "-f", "trafficgame.py"])
         subprocess.Popen(["pkill", "-f", "ishayatbacked.py"])
+        time.sleep(1)
         results1 = subprocess.Popen([".venv/bin/python", "gamekoushik/trafficgame.py"])
         print(results1.stdout)
         results2 = subprocess.Popen([".venv/bin/python", "gamekoushik/posturetest_koushik.py"])
@@ -52,6 +54,7 @@ def opengame(data:command):
         subprocess.Popen(["pkill", "-f", "posturetest_koushik.py"])
         subprocess.Popen(["pkill", "-f", "trafficgame.py"])
         subprocess.Popen(["pkill", "-f", "ishayatbacked.py"])
+        time.sleep(1)
         results4 = subprocess.Popen([".venv/bin/python", "gameishayat/headtilt_game.py"])
         print(results4.stdout)
         results5 = subprocess.Popen([".venv/bin/uvicorn", "ishayatbackend:api", "--reload", "--port", "7000"])
