@@ -1,7 +1,17 @@
-cdvenv/
-.venv/
-**/.venv/
-.DS_Store
-**/.DS_Store
+# Virtual Environments
 venv/
 .venv/
+env/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# IDEs
+.vscode/
+.idea/
