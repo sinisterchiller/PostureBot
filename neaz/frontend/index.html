@@ -13,19 +13,21 @@
 
   <h1>Select a game</h1>
 
-  <!-- Only testing CAR GAME for now -->
+  <!-- Launch buttons -->
   <button id="launchCarBtn">Launch Car Game</button>
+  <button id="launchQuizBtn">Launch Questionnaire Game</button>
 
   <h3>Launcher Output</h3>
   <pre id="out">---</pre>
 
 <script>
-  // Your backend URL (CONFIRMED)
-  const BACKEND_URL = "http://127.0.0.1:2301/game";
+  // Backend URL (CONFIRMED)
+  const BACKEND_URL = "http://127.0.0.1:2302/game";
   const out = document.getElementById("out");
 
+  // ===== CAR GAME =====
   document.getElementById("launchCarBtn").addEventListener("click", async () => {
-    out.textContent = "Sending request...";
+    out.textContent = "Sending request for CAR game...";
 
     try {
       const res = await fetch(BACKEND_URL, {
@@ -46,7 +48,36 @@
 
       out.textContent = JSON.stringify(data, null, 2);
     } catch (err) {
-      out.textContent = "ERROR: Could not reach backend at 127.0.0.1:2302\n\n" + err;
+      out.textContent =
+        "ERROR: Could not reach backend at 127.0.0.1:2302\n\n" + err;
+    }
+  });
+
+  // ===== QUESTIONNAIRE GAME =====
+  document.getElementById("launchQuizBtn").addEventListener("click", async () => {
+    out.textContent = "Sending request for QUESTIONNAIRE game...";
+
+    try {
+      const res = await fetch(BACKEND_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ "game": "1" }) // 1 = questionnaire game
+      });
+
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = text;
+      }
+
+      out.textContent = JSON.stringify(data, null, 2);
+    } catch (err) {
+      out.textContent =
+        "ERROR: Could not reach backend at 127.0.0.1:2302\n\n" + err;
     }
   });
 </script>
