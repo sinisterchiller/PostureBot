@@ -3,10 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import time
 import random
+import requests
 
 api = FastAPI()
 
-# Enable CORS
 api.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,21 +15,257 @@ api.add_middleware(
     allow_headers=["*"],
 )
 
+# ===== MORE FUN QUESTION GENERATORS =====
+
+def get_trivia_question():
+    """Real trivia questions"""
+    try:
+        r = requests.get("https://opentdb.com/api.php?amount=1&type=multiple", timeout=3)
+        data = r.json()
+        
+        if data['response_code'] == 0:
+            q = data['results'][0]
+            answers = [q['correct_answer'], random.choice(q['incorrect_answers'])]
+            random.shuffle(answers)
+            
+            return {
+                "question": q['question'].replace('&quot;', '"').replace('&#039;', "'").replace('&amp;', '&'),
+                "left_answer": answers[0].replace('&quot;', '"').replace('&#039;', "'").replace('&amp;', '&'),
+                "right_answer": answers[1].replace('&quot;', '"').replace('&#039;', "'").replace('&amp;', '&'),
+                "correct_side": "LEFT" if answers[0] == q['correct_answer'] else "RIGHT",
+                "category": q['category']
+            }
+    except:
+        pass
+    return None
+
+def get_would_you_rather():
+    """Would You Rather questions"""
+    try:
+        r = requests.get("https://would-you-rather-api.abaanshanid.repl.co/", timeout=3)
+        data = r.json()
+        
+        return {
+            "question": "Would you rather...",
+            "left_answer": data['data'][0],
+            "right_answer": data['data'][1],
+            "correct_side": random.choice(["LEFT", "RIGHT"]),
+            "category": "Would You Rather"
+        }
+    except:
+        pass
+    return None
+
+def get_never_have_i_ever():
+    """Never Have I Ever statements"""
+    try:
+        r = requests.get("https://api.nhie.io/v1/statements/random", timeout=3)
+        data = r.json()
+        
+        return {
+            "question": "Never Have I Ever...",
+            "left_answer": "Done this: " + data['statement'][:50] + "...",
+            "right_answer": "Never done this",
+            "correct_side": random.choice(["LEFT", "RIGHT"]),
+            "category": "Never Have I Ever"
+        }
+    except:
+        pass
+    return None
+
+def get_dad_joke_battle():
+    """Dad joke battles"""
+    try:
+        r1 = requests.get("https://icanhazdadjoke.com/", headers={"Accept": "application/json"}, timeout=3)
+        r2 = requests.get("https://icanhazdadjoke.com/", headers={"Accept": "application/json"}, timeout=3)
+        
+        joke1 = r1.json()['joke']
+        joke2 = r2.json()['joke']
+        
+        return {
+            "question": "Which dad joke is funnier?",
+            "left_answer": joke1[:65] + "..." if len(joke1) > 65 else joke1,
+            "right_answer": joke2[:65] + "..." if len(joke2) > 65 else joke2,
+            "correct_side": random.choice(["LEFT", "RIGHT"]),
+            "category": "Dad Jokes"
+        }
+    except:
+        pass
+    return None
+
+def get_advice_battle():
+    """Life advice battles"""
+    try:
+        r1 = requests.get("https://api.adviceslip.com/advice", timeout=3)
+        time.sleep(0.5)  # API rate limit
+        r2 = requests.get("https://api.adviceslip.com/advice", timeout=3)
+        
+        advice1 = r1.json()['slip']['advice']
+        advice2 = r2.json()['slip']['advice']
+        
+        return {
+            "question": "Which advice is better?",
+            "left_answer": advice1[:65] + "..." if len(advice1) > 65 else advice1,
+            "right_answer": advice2[:65] + "..." if len(advice2) > 65 else advice2,
+            "correct_side": random.choice(["LEFT", "RIGHT"]),
+            "category": "Life Advice"
+        }
+    except:
+        pass
+    return None
+
+def get_useless_fact_battle():
+    """Useless facts battle"""
+    try:
+        r1 = requests.get("https://uselessfacts.jsph.pl/random.json?language=en", timeout=3)
+        r2 = requests.get("https://uselessfacts.jsph.pl/random.json?language=en", timeout=3)
+        
+        fact1 = r1.json()['text']
+        fact2 = r2.json()['text']
+        
+        return {
+            "question": "Which fact is more interesting?",
+            "left_answer": fact1[:65] + "..." if len(fact1) > 65 else fact1,
+            "right_answer": fact2[:65] + "..." if len(fact2) > 65 else fact2,
+            "correct_side": random.choice(["LEFT", "RIGHT"]),
+            "category": "Useless Facts"
+        }
+    except:
+        pass
+    return None
+
+def get_riddle():
+    """Random riddles"""
+    try:
+        r = requests.get("https://riddles-api.vercel.app/random", timeout=3)
+        data = r.json()
+        
+        # Create fake answer
+        fake_answers = [
+            "A shadow",
+            "Time",
+            "Your name",
+            "Nothing",
+            "A mirror",
+            "An echo",
+            "The future",
+            "Silence"
+        ]
+        
+        real_answer = data['answer']
+        fake_answer = random.choice([a for a in fake_answers if a.lower() != real_answer.lower()])
+        
+        answers = [real_answer, fake_answer]
+        random.shuffle(answers)
+        
+        return {
+            "question": data['riddle'],
+            "left_answer": answers[0],
+            "right_answer": answers[1],
+            "correct_side": "LEFT" if answers[0] == real_answer else "RIGHT",
+            "category": "Riddles"
+        }
+    except:
+        pass
+    return None
+
+def chuck_norris_quiz():
+    """Chuck Norris facts"""
+    try:
+        joke1 = requests.get("https://api.chucknorris.io/jokes/random", timeout=3).json()
+        joke2 = requests.get("https://api.chucknorris.io/jokes/random", timeout=3).json()
+        
+        return {
+            "question": "Which Chuck Norris fact is more legendary?",
+            "left_answer": joke1['value'][:65] + "..." if len(joke1['value']) > 65 else joke1['value'],
+            "right_answer": joke2['value'][:65] + "..." if len(joke2['value']) > 65 else joke2['value'],
+            "correct_side": random.choice(["LEFT", "RIGHT"]),
+            "category": "Chuck Norris"
+        }
+    except:
+        pass
+    return None
+
+def get_truth_or_dare():
+    """Truth or Dare questions"""
+    try:
+        r = requests.get("https://api.truthordarebot.xyz/v1/truth", timeout=3)
+        data = r.json()
+        
+        return {
+            "question": "Truth or Dare?",
+            "left_answer": "Truth: " + data['question'][:50] + "...",
+            "right_answer": "Skip this one",
+            "correct_side": random.choice(["LEFT", "RIGHT"]),
+            "category": "Truth or Dare"
+        }
+    except:
+        pass
+    return None
+
+def get_joke_battle():
+    """Random jokes battle"""
+    try:
+        r1 = requests.get("https://official-joke-api.appspot.com/random_joke", timeout=3)
+        r2 = requests.get("https://official-joke-api.appspot.com/random_joke", timeout=3)
+        
+        joke1 = r1.json()
+        joke2 = r2.json()
+        
+        full1 = f"{joke1['setup']} {joke1['punchline']}"
+        full2 = f"{joke2['setup']} {joke2['punchline']}"
+        
+        return {
+            "question": "Which joke is funnier?",
+            "left_answer": full1[:65] + "..." if len(full1) > 65 else full1,
+            "right_answer": full2[:65] + "..." if len(full2) > 65 else full2,
+            "correct_side": random.choice(["LEFT", "RIGHT"]),
+            "category": "Jokes"
+        }
+    except:
+        pass
+    return None
+
+def get_random_question():
+    """Get random question from any API"""
+    generators = [
+        get_trivia_question,
+        get_would_you_rather,
+        get_dad_joke_battle,
+        get_advice_battle,
+        get_useless_fact_battle,
+        chuck_norris_quiz,
+        get_riddle,
+        get_joke_battle,
+        get_never_have_i_ever,
+    ]
+    
+    random.shuffle(generators)
+    
+    for gen in generators:
+        try:
+            result = gen()
+            if result:
+                return result
+        except:
+            continue
+    
+    # Fallback
+    return {
+        "question": "Are you having fun?",
+        "left_answer": "Yes!",
+        "right_answer": "Absolutely!",
+        "correct_side": "LEFT",
+        "category": "Meta"
+    }
+
 # ===== MODELS =====
 class TiltData(BaseModel):
     selection: str
     angle: float
-    stable_duration: float
+    hold_time: float
     ready: bool
     confidence: float
-
-class QuizQuestion(BaseModel):
-    id: int
-    question: str
-    left_answer: str
-    right_answer: str
-    correct_side: str
-    category: str
 
 class AnswerSubmission(BaseModel):
     question_id: int
@@ -40,161 +276,30 @@ class AnswerSubmission(BaseModel):
 current_tilt = TiltData(
     selection="NEUTRAL",
     angle=0,
-    stable_duration=0,
+    hold_time=0,
     ready=False,
     confidence=0
 )
 
 @api.post("/headtilt")
 def receive_tilt(data: TiltData):
-    """Receive head tilt data from camera"""
     global current_tilt
     current_tilt = data
     return {"ok": True}
 
 @api.get("/headtilt")
 def get_tilt():
-    """Get current head tilt state"""
     return current_tilt
-
-# ===== QUIZ QUESTIONS =====
-QUIZ_BANK = [
-    QuizQuestion(
-        id=1, question="Python was created in:", 
-        left_answer="1991", right_answer="2000", 
-        correct_side="LEFT", category="Programming"
-    ),
-    QuizQuestion(
-        id=2, question="React is a:", 
-        left_answer="Database", right_answer="UI Library", 
-        correct_side="RIGHT", category="Programming"
-    ),
-    QuizQuestion(
-        id=3, question="JavaScript runs on:",
-        left_answer="Server only", right_answer="Browser & Server",
-        correct_side="RIGHT", category="Programming"
-    ),
-    QuizQuestion(
-        id=4, question="TypeScript is:",
-        left_answer="Compiled to JS", right_answer="Runs directly",
-        correct_side="LEFT", category="Programming"
-    ),
-    QuizQuestion(
-        id=5, question="HTTP status 404 means:", 
-        left_answer="Not Found", right_answer="Server Error", 
-        correct_side="LEFT", category="Web Dev"
-    ),
-    QuizQuestion(
-        id=6, question="REST API uses:", 
-        left_answer="HTTP Methods", right_answer="Only GET", 
-        correct_side="LEFT", category="Web Dev"
-    ),
-    QuizQuestion(
-        id=7, question="CSS is used for:",
-        left_answer="Styling", right_answer="Logic",
-        correct_side="LEFT", category="Web Dev"
-    ),
-    QuizQuestion(
-        id=8, question="Binary 1010 in decimal:", 
-        left_answer="10", right_answer="5", 
-        correct_side="LEFT", category="CS Basics"
-    ),
-    QuizQuestion(
-        id=9, question="GPU stands for:", 
-        left_answer="General Processing", right_answer="Graphics Processing", 
-        correct_side="RIGHT", category="Hardware"
-    ),
-    QuizQuestion(
-        id=10, question="MongoDB is a:", 
-        left_answer="SQL Database", right_answer="NoSQL Database", 
-        correct_side="RIGHT", category="Databases"
-    ),
-    QuizQuestion(
-        id=11, question="SQL databases are:",
-        left_answer="Relational", right_answer="Non-relational",
-        correct_side="LEFT", category="Databases"
-    ),
-    QuizQuestion(
-        id=12, question="Machine Learning uses:", 
-        left_answer="Data patterns", right_answer="Magic", 
-        correct_side="LEFT", category="AI"
-    ),
-    QuizQuestion(
-        id=13, question="AI stands for:",
-        left_answer="Artificial Intelligence", right_answer="Automated Internet",
-        correct_side="LEFT", category="AI"
-    ),
-    QuizQuestion(
-        id=14, question="Git is used for:",
-        left_answer="Version Control", right_answer="Database Storage",
-        correct_side="LEFT", category="DevOps"
-    ),
-    QuizQuestion(
-        id=15, question="Docker is a:",
-        left_answer="Programming Language", right_answer="Container Platform",
-        correct_side="RIGHT", category="DevOps"
-    ),
-    QuizQuestion(
-        id=16, question="Linux is a:",
-        left_answer="OS Kernel", right_answer="Programming Language",
-        correct_side="LEFT", category="Operating Systems"
-    ),
-    QuizQuestion(
-        id=17, question="Cloud computing means:",
-        left_answer="Weather prediction", right_answer="Remote servers",
-        correct_side="RIGHT", category="Cloud"
-    ),
-    QuizQuestion(
-        id=18, question="The speed of light is:", 
-        left_answer="300,000 km/s", right_answer="150,000 km/s", 
-        correct_side="LEFT", category="Science"
-    ),
-    QuizQuestion(
-        id=19, question="What's the capital of Canada?", 
-        left_answer="Toronto", right_answer="Ottawa", 
-        correct_side="RIGHT", category="Geography"
-    ),
-    QuizQuestion(
-        id=20, question="Who invented the WWW?",
-        left_answer="Tim Berners-Lee", right_answer="Bill Gates",
-        correct_side="LEFT", category="History"
-    ),
-    QuizQuestion(
-        id=21, question="GitHub is used for:",
-        left_answer="Code hosting", right_answer="Video streaming",
-        correct_side="LEFT", category="DevOps"
-    ),
-    QuizQuestion(
-        id=22, question="JSON stands for:",
-        left_answer="JavaScript Object Notation", right_answer="Java Syntax Object Name",
-        correct_side="LEFT", category="Web Dev"
-    ),
-    QuizQuestion(
-        id=23, question="API stands for:",
-        left_answer="Application Programming Interface", right_answer="Advanced Program Integration",
-        correct_side="LEFT", category="Programming"
-    ),
-    QuizQuestion(
-        id=24, question="Node.js is built on:",
-        left_answer="V8 JavaScript Engine", right_answer="Python Runtime",
-        correct_side="LEFT", category="Programming"
-    ),
-    QuizQuestion(
-        id=25, question="RAM stands for:",
-        left_answer="Random Access Memory", right_answer="Read Always Memory",
-        correct_side="LEFT", category="Hardware"
-    ),
-]
 
 # ===== GAME STATE =====
 game_state = {
     "active": False,
+    "mode": "random",
     "current_question": None,
     "question_start_time": None,
     "score": 0,
     "total_questions": 0,
     "correct_answers": 0,
-    "questions_used": [],
     "streak": 0,
     "best_streak": 0
 }
@@ -202,39 +307,60 @@ game_state = {
 # ===== GAME ENDPOINTS =====
 
 @api.post("/game/start")
-def start_game():
-    """Start new game - returns first question"""
+def start_game(mode: str = "random"):
+    """Start new game"""
     global game_state
     
-    # Reset game state
     game_state = {
         "active": True,
+        "mode": mode,
         "current_question": None,
         "question_start_time": None,
         "score": 0,
         "total_questions": 0,
         "correct_answers": 0,
-        "questions_used": [],
         "streak": 0,
         "best_streak": 0
     }
     
-    # Get first question
-    available = [q for q in QUIZ_BANK if q.id not in game_state["questions_used"]]
-    question = random.choice(available)
+    # Get first question based on mode
+    if mode == "trivia":
+        question_data = get_trivia_question()
+    elif mode == "chuck":
+        question_data = chuck_norris_quiz()
+    elif mode == "dadjokes":
+        question_data = get_dad_joke_battle()
+    elif mode == "advice":
+        question_data = get_advice_battle()
+    elif mode == "facts":
+        question_data = get_useless_fact_battle()
+    elif mode == "wouldyourather":
+        question_data = get_would_you_rather()
+    elif mode == "riddles":
+        question_data = get_riddle()
+    elif mode == "jokes":
+        question_data = get_joke_battle()
+    elif mode == "neverhaveiever":
+        question_data = get_never_have_i_ever()
+    else:  # random
+        question_data = get_random_question()
     
-    game_state["current_question"] = question.model_dump()
+    if not question_data:
+        question_data = get_random_question()
+    
+    question_data["id"] = 1
+    game_state["current_question"] = question_data
     game_state["question_start_time"] = time.time()
-    game_state["questions_used"].append(question.id)
     
     return {
-        "id": question.id,
-        "question": question.question,
-        "left_answer": question.left_answer,
-        "right_answer": question.right_answer,
-        "category": question.category,
+        "id": 1,
+        "question": question_data["question"],
+        "left_answer": question_data["left_answer"],
+        "right_answer": question_data["right_answer"],
+        "category": question_data["category"],
         "question_number": 1,
-        "total_questions": len(QUIZ_BANK)
+        "total_questions": "∞",
+        "mode": mode
     }
 
 @api.get("/game/next")
@@ -245,57 +371,60 @@ def next_question():
     if not game_state["active"]:
         raise HTTPException(400, "Game not active")
     
-    # Check if game is over
-    available = [q for q in QUIZ_BANK if q.id not in game_state["questions_used"]]
+    mode = game_state.get("mode", "random")
     
-    if not available:
-        # Game over
-        game_state["active"] = False
-        return {
-            "game_over": True,
-            "final_stats": {
-                "score": game_state["score"],
-                "total_questions": game_state["total_questions"],
-                "correct_answers": game_state["correct_answers"],
-                "accuracy": round((game_state["correct_answers"] / game_state["total_questions"] * 100) if game_state["total_questions"] > 0 else 0, 1),
-                "best_streak": game_state["best_streak"]
-            }
-        }
+    if mode == "trivia":
+        question_data = get_trivia_question()
+    elif mode == "chuck":
+        question_data = chuck_norris_quiz()
+    elif mode == "dadjokes":
+        question_data = get_dad_joke_battle()
+    elif mode == "advice":
+        question_data = get_advice_battle()
+    elif mode == "facts":
+        question_data = get_useless_fact_battle()
+    elif mode == "wouldyourather":
+        question_data = get_would_you_rather()
+    elif mode == "riddles":
+        question_data = get_riddle()
+    elif mode == "jokes":
+        question_data = get_joke_battle()
+    elif mode == "neverhaveiever":
+        question_data = get_never_have_i_ever()
+    else:
+        question_data = get_random_question()
     
-    # Get next question
-    question = random.choice(available)
+    if not question_data:
+        question_data = get_random_question()
     
-    game_state["current_question"] = question.model_dump()
+    question_data["id"] = game_state["total_questions"] + 1
+    game_state["current_question"] = question_data
     game_state["question_start_time"] = time.time()
-    game_state["questions_used"].append(question.id)
     
     return {
-        "id": question.id,
-        "question": question.question,
-        "left_answer": question.left_answer,
-        "right_answer": question.right_answer,
-        "category": question.category,
-        "question_number": len(game_state["questions_used"]),
-        "total_questions": len(QUIZ_BANK)
+        "id": question_data["id"],
+        "question": question_data["question"],
+        "left_answer": question_data["left_answer"],
+        "right_answer": question_data["right_answer"],
+        "category": question_data["category"],
+        "question_number": game_state["total_questions"] + 1,
+        "total_questions": "∞",
+        "mode": mode
     }
 
 @api.post("/game/answer")
 def submit_answer(answer: AnswerSubmission):
-    """Submit answer and get result"""
+    """Submit answer"""
     global game_state
     
     if not game_state["active"] or not game_state["current_question"]:
         raise HTTPException(400, "No active question")
     
     question = game_state["current_question"]
-    
-    if question["id"] != answer.question_id:
-        raise HTTPException(400, "Question ID mismatch")
-    
     is_correct = answer.selected_side == question["correct_side"]
+    
     game_state["total_questions"] += 1
     
-    # Calculate score
     base_points = 100
     time_bonus = max(0, int((5 - answer.response_time) * 10))
     
@@ -329,7 +458,7 @@ def submit_answer(answer: AnswerSubmission):
 
 @api.get("/game/stats")
 def get_stats():
-    """Get current game statistics"""
+    """Get stats"""
     accuracy = (game_state["correct_answers"] / game_state["total_questions"] * 100) if game_state["total_questions"] > 0 else 0
     
     return {
@@ -339,35 +468,53 @@ def get_stats():
         "accuracy": round(accuracy, 1),
         "current_streak": game_state["streak"],
         "best_streak": game_state["best_streak"],
-        "active": game_state["active"]
+        "active": game_state["active"],
+        "mode": game_state.get("mode", "random")
+    }
+
+@api.post("/game/end")
+def end_game():
+    """End game and return to menu"""
+    global game_state
+    
+    final_stats = {
+        "score": game_state["score"],
+        "total_questions": game_state["total_questions"],
+        "correct_answers": game_state["correct_answers"],
+        "accuracy": round((game_state["correct_answers"] / game_state["total_questions"] * 100) if game_state["total_questions"] > 0 else 0, 1),
+        "best_streak": game_state["best_streak"]
+    }
+    
+    game_state["active"] = False
+    
+    return {
+        "ended": True,
+        "final_stats": final_stats
     }
 
 @api.get("/health")
 def health():
-    """Health check"""
     return {
         "status": "ok",
         "game_active": game_state["active"],
-        "tilt_connected": current_tilt.selection != "NEUTRAL" or current_tilt.confidence > 0
+        "mode": game_state.get("mode", "random")
     }
 
 @api.get("/")
 def root():
-    """Root endpoint"""
     return {
-        "app": "Head Tilt Quiz Game API",
-        "version": "1.0",
-        "endpoints": {
-            "game": {
-                "start": "POST /game/start",
-                "next": "GET /game/next",
-                "answer": "POST /game/answer",
-                "stats": "GET /game/stats"
-            },
-            "tilt": {
-                "update": "POST /headtilt",
-                "get": "GET /headtilt"
-            },
-            "health": "GET /health"
+        "app": "Head Tilt Quiz - Fun Edition",
+        "version": "4.0",
+        "modes": {
+            "random": "Mix of everything",
+            "trivia": "Real trivia",
+            "chuck": "Chuck Norris",
+            "dadjokes": "Dad jokes",
+            "advice": "Life advice",
+            "facts": "Useless facts",
+            "wouldyourather": "Would you rather",
+            "riddles": "Brain teasers",
+            "jokes": "Random jokes",
+            "neverhaveiever": "NHIE"
         }
     }

@@ -11,19 +11,15 @@ API_URL = "http://127.0.0.1:8000/headtilt"
 MODEL_PATH = "pose_landmarker_full.task"
 
 def calculate_head_tilt(lm):
-    """Calculate head tilt angle - FIXED"""
+    """Calculate head tilt angle"""
     LEFT_EAR = 7
     RIGHT_EAR = 8
     
     l_ear = lm[LEFT_EAR]
     r_ear = lm[RIGHT_EAR]
     
-    # Simple angle calculation
-    dy = l_ear.y - r_ear.y  # LEFT ear Y minus RIGHT ear Y
-    dx = l_ear.x - r_ear.x  # LEFT ear X minus RIGHT ear X
-    
-    # When you tilt LEFT, left ear goes DOWN (higher Y value)
-    # When you tilt RIGHT, right ear goes DOWN (higher Y value)
+    dy = l_ear.y - r_ear.y
+    dx = l_ear.x - r_ear.x
     angle = math.degrees(math.atan2(dy, dx))
     
     confidence = 1.0
@@ -33,29 +29,26 @@ def calculate_head_tilt(lm):
     return angle, confidence
 
 class SimpleTiltSelector:
-    """SUPER SIMPLE tilt selector that ACTUALLY WORKS"""
+    """Simple tilt selector"""
     def __init__(self):
-        self.angle_history = deque(maxlen=5)  # Small window = responsive
+        self.angle_history = deque(maxlen=5)
         self.current_selection = "NEUTRAL"
         self.selection_start = None
         self.hold_time = 0
         
     def update(self, angle, confidence):
-        """Update based on angle"""
         self.angle_history.append(angle)
         avg_angle = sum(self.angle_history) / len(self.angle_history)
         
-        # SIMPLE LOGIC: Just check the angle!
         if confidence < 0.5:
             new_selection = "NEUTRAL"
-        elif avg_angle > 15:  # Positive = LEFT
-            new_selection = "LEFT"
-        elif avg_angle < -15:  # Negative = RIGHT
+        elif avg_angle > 15:
             new_selection = "RIGHT"
+        elif avg_angle < -15:
+            new_selection = "LEFT"
         else:
             new_selection = "NEUTRAL"
         
-        # Track hold time
         now = time.time()
         if new_selection == self.current_selection and new_selection != "NEUTRAL":
             if self.selection_start is None:
@@ -66,7 +59,7 @@ class SimpleTiltSelector:
             self.selection_start = now if new_selection != "NEUTRAL" else None
             self.hold_time = 0
         
-        is_ready = self.hold_time >= 0.7  # 0.7 seconds to confirm
+        is_ready = self.hold_time >= 0.7
         
         return {
             "selection": self.current_selection,
@@ -106,21 +99,17 @@ def draw_selection_box(frame, side, hold_time, ready):
         thickness = int(6 + 6 * progress)
         alpha = 0.2 + 0.2 * progress
     
-    # Glow
     overlay = frame.copy()
     cv2.rectangle(overlay, (box_x, box_y), (box_x + box_width, box_y + box_height), color, -1)
     cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
     
-    # Border
     cv2.rectangle(frame, (box_x, box_y), (box_x + box_width, box_y + box_height), color, thickness)
     
-    # Progress bar
     if hold_time > 0 and not ready:
         bar_h = int((hold_time / 0.7) * (box_height - 20))
         cv2.rectangle(frame, (box_x + 10, box_y + box_height - 10 - bar_h), 
                      (box_x + 25, box_y + box_height - 10), color, -1)
     
-    # Checkmark
     if ready:
         cv2.putText(frame, "✓", (box_x + box_width // 2 - 40, box_y + box_height // 2 + 40), 
                    cv2.FONT_HERSHEY_SIMPLEX, 4.0, (0, 255, 0), 8)
@@ -200,15 +189,26 @@ game = {
 }
 
 print("="*80)
-print("🎯 HEAD TILT QUIZ 🎯")
+print("🎮 HEAD TILT QUIZ - ULTIMATE FUN EDITION 🎮")
 print("="*80)
-print("SPACEBAR - Confirm (when GREEN)")
-print("'s' - Start | 'p' - Pause | 'q' - Quit")
+print("MODE SELECTION:")
+print("  's' - 🎲 RANDOM (mix)")
+print("  't' - 🎓 TRIVIA")
+print("  'c' - 🥋 CHUCK NORRIS")
+print("  'd' - 👨 DAD JOKES")
+print("  'f' - 🤓 FACTS")
+print("  'w' - 🤔 WOULD YOU RATHER")
+print("  'r' - 🧩 RIDDLES")
+print("  'j' - 😂 JOKES")
+print("  'n' - 🎭 NEVER HAVE I EVER")
+print("\nDURING GAME:")
+print("  SPACEBAR - Confirm | 'p' - Pause | 'e' - Exit to menu | 'q' - Quit")
 print("="*80)
 
-def start_quiz():
+def start_mode(mode):
+    """Start specific mode"""
     try:
-        r = requests.post("http://127.0.0.1:8000/game/start", timeout=2)
+        r = requests.post(f"http://127.0.0.1:8000/game/start?mode={mode}", timeout=2)
         if r.status_code == 200:
             game["question"] = r.json()
             game["q_start"] = time.time()
@@ -216,41 +216,49 @@ def start_quiz():
             game["answered"] = False
             game["result"] = None
             selector.reset()
-            print("\n🎮 STARTED!")
+            
+            mode_names = {
+                "random": "🎲 RANDOM MIX",
+                "trivia": "🎓 TRIVIA",
+                "chuck": "🥋 CHUCK NORRIS",
+                "dadjokes": "👨 DAD JOKES",
+                "facts": "🤓 USELESS FACTS",
+                "wouldyourather": "🤔 WOULD YOU RATHER",
+                "riddles": "🧩 RIDDLES",
+                "jokes": "😂 JOKES",
+                "neverhaveiever": "🎭 NEVER HAVE I EVER"
+            }
+            print(f"\n{mode_names.get(mode, mode.upper())} MODE!")
             return True
     except Exception as e:
         print(f"❌ {e}")
         return False
 
 def next_question():
+    """Get next question"""
     try:
         r = requests.get("http://127.0.0.1:8000/game/next", timeout=2)
         if r.status_code == 200:
             data = r.json()
-            if data.get("game_over"):
-                s = data.get("final_stats", {})
-                print("\n"+"="*80)
-                print("🏆 GAME OVER!")
-                print(f"Score: {s.get('score', 0)} | Accuracy: {s.get('accuracy', 0)}%")
-                print("="*80)
-                game["active"] = False
-                return None
+            
             game["question"] = data
             game["q_start"] = time.time()
             game["answered"] = False
             game["result"] = None
             selector.reset()
-            print(f"\n📝 Q{data.get('question_number', '?')}/{data.get('total_questions', '?')}")
+            
+            print(f"\n📝 Q{data.get('question_number', '?')} | {data.get('category', 'Unknown')}")
             return data
     except Exception as e:
         print(f"❌ {e}")
         return None
 
 def submit(side, ready):
+    """Submit answer"""
     if not game["question"] or game["answered"] or game["paused"]:
         return
     if side == "NEUTRAL":
-        print("⚠️  Select LEFT or RIGHT first")
+        print("⚠️  Select LEFT or RIGHT")
         return
     if not ready:
         print("⚠️  Hold until GREEN")
@@ -272,14 +280,37 @@ def submit(side, ready):
             game["result"] = res
             game["result_time"] = time.time()
             if res.get('correct'):
-                print(f"✅ CORRECT! +{res.get('points_earned', 0)}")
+                print(f"✅ +{res.get('points_earned', 0)} pts | Streak: {res.get('streak', 0)}")
             else:
-                print(f"❌ WRONG! Answer: {res.get('correct_answer')}")
+                print(f"❌ Answer: {res.get('correct_answer')} | Score: {res.get('total_score', 0)}")
     except Exception as e:
         print(f"❌ {e}")
         game["answered"] = False
 
-print("\n✅ Ready. Press 's' to start!\n")
+def exit_to_menu():
+    """Exit to main menu"""
+    if game["active"]:
+        try:
+            r = requests.post("http://127.0.0.1:8000/game/end", timeout=2)
+            if r.status_code == 200:
+                data = r.json()
+                stats = data.get("final_stats", {})
+                print("\n" + "="*80)
+                print("📊 SESSION ENDED")
+                print(f"Score: {stats.get('score', 0)} | Questions: {stats.get('total_questions', 0)}")
+                print(f"Accuracy: {stats.get('accuracy', 0)}% | Best Streak: {stats.get('best_streak', 0)}")
+                print("="*80)
+        except:
+            pass
+        
+        game["active"] = False
+        game["question"] = None
+        game["result"] = None
+        game["answered"] = False
+        selector.reset()
+        print("\n🏠 Returned to main menu. Select a mode to play again!\n")
+
+print("\n✅ Ready! Select a mode!\n")
 
 try:
     while True:
@@ -290,9 +321,9 @@ try:
         frame = cv2.flip(frame, 1)
         h, w = frame.shape[:2]
         
-        # Auto-advance after result
+        # Auto-advance
         if game["result"] and game["result_time"]:
-            if time.time() - game["result_time"] > 2.0:  # 2 second pause
+            if time.time() - game["result_time"] > 2.0:
                 next_question()
         
         # Process
@@ -324,16 +355,32 @@ try:
                 cv2.rectangle(ov, (0, 0), (w, h), (0, 0, 0), -1)
                 cv2.addWeighted(ov, 0.8, frame, 0.2, 0, frame)
                 draw_text_centered(frame, "⏸️  PAUSED", h//2, 3.0, (255, 255, 255), 5)
-                draw_text_centered(frame, "Press 'p' to resume", h//2 + 100, 1.3, (200, 200, 200), 3)
+                draw_text_centered(frame, "Press 'p' to resume | 'e' to exit", h//2 + 100, 1.0, (200, 200, 200), 2)
             
             # RESULT
             elif game["result"]:
                 rd = game["result"]
                 ov = frame.copy()
+                
+                mode = game["question"].get("mode", "random")
+                
                 if rd.get("correct"):
                     cv2.rectangle(ov, (0, 0), (w, h), (0, 130, 0), -1)
                     cv2.addWeighted(ov, 0.7, frame, 0.3, 0, frame)
-                    draw_text_centered(frame, "✅ CORRECT!", h//2 - 100, 3.5, (0, 255, 0), 7)
+                    
+                    mode_msgs = {
+                        "chuck": "🥋 LEGENDARY!",
+                        "dadjokes": "😂 HILARIOUS!",
+                        "facts": "🤓 FASCINATING!",
+                        "wouldyourather": "🤔 WISE!",
+                        "riddles": "🧩 GENIUS!",
+                        "jokes": "😄 FUNNY!",
+                        "neverhaveiever": "🎭 HONEST!",
+                        "trivia": "🎓 SMART!",
+                    }
+                    msg = mode_msgs.get(mode, "✅ CORRECT!")
+                    
+                    draw_text_centered(frame, msg, h//2 - 100, 3.5, (0, 255, 0), 7)
                 else:
                     cv2.rectangle(ov, (0, 0), (w, h), (0, 0, 130), -1)
                     cv2.addWeighted(ov, 0.7, frame, 0.3, 0, frame)
@@ -342,10 +389,24 @@ try:
                 
                 draw_text_centered(frame, f"+{rd.get('points_earned', 0)} pts", h//2 + 90, 2.2, (255, 255, 0), 5)
                 draw_text_centered(frame, f"Score: {rd.get('total_score', 0)}", h//2 + 160, 1.5, (255, 255, 255), 3)
+                
+                if rd.get('streak', 0) > 1:
+                    draw_text_centered(frame, f"🔥 {rd['streak']} Streak!", h//2 + 220, 1.2, (255, 140, 0), 3)
             
             # QUESTION
             elif game["active"] and game["question"] and not game["answered"]:
                 q = game["question"]
+                
+                # Mode indicator
+                mode = q.get('mode', 'random')
+                mode_icons = {
+                    "trivia": "🎓", "chuck": "🥋", "dadjokes": "👨",
+                    "facts": "🤓", "wouldyourather": "🤔", "riddles": "🧩",
+                    "jokes": "😂", "neverhaveiever": "🎭", "random": "🎲"
+                }
+                icon = mode_icons.get(mode, "🎮")
+                cv2.putText(frame, f"{icon} {mode.upper()}", (10, 60), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 140, 0), 3)
                 
                 # Selection box
                 if tilt["selection"] != "NEUTRAL":
@@ -362,7 +423,7 @@ try:
                 draw_text_in_box(frame, wrap(q.get('right_answer', ''), 18), w//2 + 30, h//4, w//2 - 60, h//2, 1.4)
                 
                 # Category
-                cv2.rectangle(frame, (w//2 - 130, 110), (w//2 + 130, 150), (0, 0, 0), -1)
+                cv2.rectangle(frame, (w//2 - 150, 110), (w//2 + 150, 150), (0, 0, 0), -1)
                 draw_text_centered(frame, f"📚 {q.get('category', '')}", 135, 0.85, (180, 180, 180), 2)
                 
                 # Stats
@@ -373,7 +434,8 @@ try:
                         sb = frame.copy()
                         cv2.rectangle(sb, (0, h - 55), (w, h), (0, 0, 0), -1)
                         cv2.addWeighted(sb, 0.65, frame, 0.35, 0, frame)
-                        txt = f"Score: {st.get('score', 0)}  |  Streak: {st.get('current_streak', 0)}  |  Q: {st.get('total_questions', 0)}/25"
+                        
+                        txt = f"Score: {st.get('score', 0)} | Streak: {st.get('current_streak', 0)} | Q: {st.get('total_questions', 0)}"
                         draw_text_centered(frame, txt, h - 22, 0.9, (0, 255, 255), 2)
                 except:
                     pass
@@ -386,16 +448,16 @@ try:
                 if tilt["selection"] == "NEUTRAL":
                     draw_text_centered(frame, "👈 Tilt LEFT or RIGHT 👉", h - 78, 1.3, (255, 255, 255), 3)
                 elif tilt["ready"]:
-                    draw_text_centered(frame, "✅ Press SPACEBAR!", h - 78, 1.4, (0, 255, 0), 4)
+                    draw_text_centered(frame, "✅ SPACEBAR to confirm!", h - 78, 1.4, (0, 255, 0), 4)
                 else:
                     pct = int((tilt["hold_time"] / 0.7) * 100)
-                    draw_text_centered(frame, f"⏳ Hold... {pct}%", h - 78, 1.2, (255, 200, 0), 3)
+                    draw_text_centered(frame, f"⏳ {pct}%", h - 78, 1.2, (255, 200, 0), 3)
             
-            # DEBUG - SUPER IMPORTANT
-            debug = f"TILT: {tilt['selection']} | ANGLE: {tilt['angle']:.1f}° | CONF: {tilt['confidence']:.2f}"
+            # DEBUG
+            debug = f"TILT: {tilt['selection']} | {tilt['angle']:.1f}° | CONF: {tilt['confidence']:.2f}"
             cv2.putText(frame, debug, (10, h - 130), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
             
-            # Draw ears for debugging
+            # Ears
             try:
                 l_ear = lm[7]
                 r_ear = lm[8]
@@ -409,12 +471,16 @@ try:
         else:
             draw_text_centered(frame, "⚠️ NO PERSON", h//2, 2.0, (0, 0, 255), 4)
         
-        # Start screen
+        # MAIN MENU
         if not game["active"]:
             ov = frame.copy()
-            cv2.rectangle(ov, (w//2 - 320, h - 160), (w//2 + 320, h - 50), (0, 110, 0), -1)
-            cv2.addWeighted(ov, 0.75, frame, 0.25, 0, frame)
-            draw_text_centered(frame, "Press 's' to START", h - 95, 2.0, (255, 255, 255), 4)
+            cv2.rectangle(ov, (40, h - 200), (w - 40, h - 30), (0, 0, 50), -1)
+            cv2.addWeighted(ov, 0.85, frame, 0.15, 0, frame)
+            
+            draw_text_centered(frame, "🎮 SELECT MODE 🎮", h - 170, 1.3, (255, 255, 0), 3)
+            draw_text_centered(frame, "s=Random | t=Trivia | c=Chuck | d=Dad | f=Facts", h - 130, 0.85, (255, 255, 255), 2)
+            draw_text_centered(frame, "w=WYR | r=Riddles | j=Jokes | n=NHIE", h - 100, 0.85, (255, 255, 255), 2)
+            draw_text_centered(frame, "q=Quit Game", h - 65, 0.9, (200, 200, 200), 2)
         
         # Send
         now = time.time()
@@ -425,13 +491,35 @@ try:
                 pass
             last_send = now
         
-        cv2.imshow("Head Tilt Quiz", frame)
+        cv2.imshow("Head Tilt Quiz - Ultimate Edition", frame)
         
         k = cv2.waitKey(1) & 0xFF
         if k == ord("q"):
-            break
+            if game["active"]:
+                exit_to_menu()
+            else:
+                print("\n👋 Thanks for playing!")
+                break
         elif k == ord("s") and not game["active"]:
-            start_quiz()
+            start_mode("random")
+        elif k == ord("t") and not game["active"]:
+            start_mode("trivia")
+        elif k == ord("c") and not game["active"]:
+            start_mode("chuck")
+        elif k == ord("d") and not game["active"]:
+            start_mode("dadjokes")
+        elif k == ord("f") and not game["active"]:
+            start_mode("facts")
+        elif k == ord("w") and not game["active"]:
+            start_mode("wouldyourather")
+        elif k == ord("r") and not game["active"]:
+            start_mode("riddles")
+        elif k == ord("j") and not game["active"]:
+            start_mode("jokes")
+        elif k == ord("n") and not game["active"]:
+            start_mode("neverhaveiever")
+        elif k == ord("e"):
+            exit_to_menu()
         elif k == ord("p") and game["active"]:
             game["paused"] = not game["paused"]
             print(f"\n{'⏸️  PAUSED' if game['paused'] else '▶️  RESUMED'}")
@@ -440,9 +528,9 @@ try:
                 submit(tilt["selection"], tilt["ready"])
 
 except KeyboardInterrupt:
-    print("\n⚠️ Stopped")
+    print("\n⚠️ Interrupted")
 finally:
     cap.release()
     cv2.destroyAllWindows()
     landmarker.close()
-    print("✅ Done")
+    print("✅ Goodbye!")
