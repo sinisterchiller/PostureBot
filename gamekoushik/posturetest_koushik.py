@@ -8,7 +8,7 @@ import requests
 
 API_URL = "http://127.0.0.1:8000/posturemetrics"
 
-MODEL_PATH = "pose_landmarker_full.task"  # <-- put your .task file here
+MODEL_PATH = "gamekoushik/pose_landmarker_full.task"  # <-- put your .task file here
 
 def clamp(x, lo=0.0, hi=1.0):
     return max(lo, min(hi, x))
@@ -119,10 +119,10 @@ while True:
         except requests.exceptions.RequestException:
             pass
 
-    now = time.time()
-    if now - last_print > 1.0:
-        print(metadata)
-        last_print = now
+    # now = time.time()
+    # if now - last_print > 1.0:
+    #     print(metadata)
+    #     last_print = now
 
     cv2.imshow("camera", frame_bgr)
     if cv2.waitKey(1) & 0xFF == ord("q"):

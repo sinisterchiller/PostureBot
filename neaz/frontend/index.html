@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>SillyCon Launcher</title>
+  <style>
+    body { font-family: Arial; padding: 24px; }
+    button { padding: 12px 16px; margin: 8px 8px 8px 0; cursor: pointer; }
+    pre { background: #f3f3f3; padding: 12px; border-radius: 8px; }
+  </style>
+</head>
+<body>
+
+  <h1>Select a game</h1>
+
+  <!-- Only testing CAR GAME for now -->
+  <button id="launchCarBtn">Launch Car Game</button>
+
+  <h3>Launcher Output</h3>
+  <pre id="out">---</pre>
+
+<script>
+  // Your backend URL (CONFIRMED)
+  const BACKEND_URL = "http://127.0.0.1:2302/game";
+  const out = document.getElementById("out");
+
+  document.getElementById("launchCarBtn").addEventListener("click", async () => {
+    out.textContent = "Sending request...";
+
+    try {
+      const res = await fetch(BACKEND_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ "game": "0" }) // 0 = car game
+      });
+
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = text;
+      }
+
+      out.textContent = JSON.stringify(data, null, 2);
+    } catch (err) {
+      out.textContent = "ERROR: Could not reach backend at 127.0.0.1:2302\n\n" + err;
+    }
+  });
+</script>
+
+</body>
+</html>
