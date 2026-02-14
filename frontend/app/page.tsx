@@ -125,17 +125,25 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
       {showRickRoll && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="text-center space-y-6 animate-in zoom-in duration-500">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm animate-fade-in">
+          <div className="text-center space-y-6 animate-zoom-in">
             <img
               src="https://media.tenor.com/x8v1oNUduSUAAAAC/rickroll-roll.gif"
               alt="Rick Roll"
-              className="w-96 h-96 rounded-3xl shadow-2xl border-4 border-primary"
+              className="w-96 h-96 rounded-3xl shadow-2xl border-4 border-red-500 mx-auto object-cover"
+              onLoad={() => console.log('✅ Rickroll GIF loaded successfully!')}
+              onError={(e) => {
+                console.error('❌ GIF failed to load, trying fallback...');
+                e.currentTarget.src = 'https://media1.giphy.com/media/Vuw9m5wXviFIQ/giphy.gif';
+              }}
             />
-            <h2 className="text-6xl font-display text-primary animate-pulse">
+            <h2 className="text-6xl font-display text-red-500 animate-pulse font-bold">
               YOU JUST GOT RICKROLLED!
             </h2>
-            <p className="text-2xl text-primary-foreground">
+            <p className="text-2xl text-white font-semibold">
+              Never gonna give you up! 🎵
+            </p>
+            <p className="text-xl text-white/80">
               Loading Tilt Master...
             </p>
           </div>
