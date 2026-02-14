@@ -33,7 +33,7 @@
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ game: "0" }) // 0 = car game
+        body: JSON.stringify({ "game": "0" }) // 0 = car game
       });
 
       const text = await res.text();
