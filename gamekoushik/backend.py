@@ -2,8 +2,10 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import subprocess
 import pyautogui
+import time
 
 api = FastAPI()
+
 
 @api.get("/health")
 def root():
@@ -25,11 +27,9 @@ def posture(data:posturedata):
     headdirection_leftrec = data.headdirection_left
     headdirection_rightrec = data.headdirection_right
     if headdirection_leftrec:
-        pyautogui.keyDown("left")
-    else:
-        pyautogui.keyUp("left")
+        pyautogui.press("left")
+        time.sleep(2)
     if headdirection_rightrec:
-        pyautogui.keyDown("right")
-    else:
-        pyautogui.keyUp("right")
+        pyautogui.press("right")
+        time.sleep(2)
     return {"ok" : True}
