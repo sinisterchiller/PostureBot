@@ -12,36 +12,51 @@ export default function Page() {
   const [hoveredGame, setHoveredGame] = useState<number | null>(null)
   const [policeModeEnabled, setPoliceModeEnabled] = useState(false)
   const [activeGame, setActiveGame] = useState<number | null>(null)
+
+  // Rickroll overlay
   const [showRickRoll, setShowRickRoll] = useState(false)
   const { toast } = useToast()
 
+  // ✅ CHANGE THIS if your "Quiz game" is game 0 instead of 1
+  const QUIZ_GAME_ID = 1
+
   const launchGame = async (gameId: number, triggeredByPolice = false) => {
-    if (gameId === 1 && !triggeredByPolice) {
+    // Only rickroll if the quiz game is clicked normally (not police-triggered)
+    if (gameId === QUIZ_GAME_ID && !triggeredByPolice) {
       setShowRickRoll(true)
+
       toast({
         title: 'GET RICKROLLED!',
         description: 'Never gonna give you up, never gonna let you down!',
       })
+
+      // Show rickroll for 3 seconds, then launch the actual game
       setTimeout(() => {
         setShowRickRoll(false)
         actuallyLaunchGame(gameId, triggeredByPolice)
       }, 3000)
+
       return
     }
+
     actuallyLaunchGame(gameId, triggeredByPolice)
   }
 
   const actuallyLaunchGame = async (gameId: number, triggeredByPolice = false) => {
     setLoading(gameId)
     setActiveGame(gameId)
+
     try {
       const response = await fetch('http://127.0.0.1:2301/game', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ game: gameId }),
       })
+
       if (!response.ok) throw new Error('Failed to launch game')
-      const data = await response.json()
+
+      await response.json()
+
       toast({
         title: triggeredByPolice ? 'POLICE MODE ACTIVATED!' : 'Game Launched!',
         description: triggeredByPolice
@@ -118,26 +133,34 @@ export default function Page() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      (window as any).triggerBadPostureGame = handleBadPosture
+      ;(window as any).triggerBadPostureGame = handleBadPosture
     }
   }, [policeModeEnabled])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
+      {/* ✅ Rickroll overlay with actual video */}
       {showRickRoll && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="text-center space-y-6 animate-in zoom-in duration-500">
-            <img
-              src="https://media.tenor.com/x8v1oNUduSUAAAAC/rickroll-roll.gif"
-              alt="Rick Roll"
-              className="w-96 h-96 rounded-3xl shadow-2xl border-4 border-primary"
-            />
-            <h2 className="text-6xl font-display text-primary animate-pulse">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm animate-fade-in p-4">
+          <div className="w-full max-w-3xl text-center space-y-6 animate-zoom-in">
+            <div className="aspect-video w-full overflow-hidden rounded-3xl border-4 border-red-500 shadow-2xl">
+              {/* Autoplay works best when muted; we unmute quickly via allow=autoplay + starting unmuted is often blocked */}
+              <iframe
+                className="w-full h-full"
+                src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=0&controls=0&loop=1&playlist=dQw4w9WgXcQ"
+                title="Rick Roll"
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+              />
+            </div>
+
+            <h2 className="text-5xl md:text-6xl font-display text-red-500 animate-pulse font-bold">
               YOU JUST GOT RICKROLLED!
             </h2>
-            <p className="text-2xl text-primary-foreground">
-              Loading Tilt Master...
+            <p className="text-xl md:text-2xl text-white font-semibold">
+              Never gonna give you up! 🎵
             </p>
+            <p className="text-lg text-white/80">Loading your game...</p>
           </div>
         </div>
       )}
@@ -166,6 +189,7 @@ export default function Page() {
             <ShieldAlert className="w-6 h-6 mr-2" />
             {policeModeEnabled ? 'POLICE MODE: ON' : 'ACTIVATE POLICE MODE'}
           </Button>
+
           <Button
             onClick={closeAll}
             variant="outline"
@@ -178,14 +202,11 @@ export default function Page() {
         </div>
 
         <div className="flex justify-center">
-          <SillyTilter
-            gameHovered={hoveredGame}
-            gameLoading={loading}
-            activeGame={activeGame}
-          />
+          <SillyTilter gameHovered={hoveredGame} gameLoading={loading} activeGame={activeGame} />
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
+          {/* Game 0 */}
           <Card
             className="group relative overflow-hidden border-4 border-primary/30 hover:border-primary transition-all duration-300 hover:shadow-2xl hover:shadow-primary/40 hover:scale-105 cursor-pointer bg-gradient-to-br from-card to-primary/5"
             onMouseEnter={() => setHoveredGame(0)}
@@ -198,9 +219,7 @@ export default function Page() {
                 <Gamepad2 className="w-10 h-10 text-primary-foreground" />
               </div>
               <div className="space-y-3">
-                <h2 className="text-3xl font-display text-foreground tracking-wide">
-                  TRAFFIC RUSH!
-                </h2>
+                <h2 className="text-3xl font-display text-foreground tracking-wide">TRAFFIC RUSH!</h2>
                 <p className="text-foreground/80 leading-relaxed text-lg font-semibold">
                   Dodge cars while keeping your posture perfect! Use your HEAD to steer! Beep beep!
                 </p>
@@ -226,6 +245,7 @@ export default function Page() {
             </div>
           </Card>
 
+          {/* Game 1 (Quiz or Tilt Master) */}
           <Card
             className="group relative overflow-hidden border-4 border-accent/30 hover:border-accent transition-all duration-300 hover:shadow-2xl hover:shadow-accent/40 hover:scale-105 cursor-pointer bg-gradient-to-br from-card to-accent/5"
             onMouseEnter={() => setHoveredGame(1)}
@@ -238,9 +258,7 @@ export default function Page() {
                 <Users className="w-10 h-10 text-accent-foreground" />
               </div>
               <div className="space-y-3">
-                <h2 className="text-3xl font-display text-foreground tracking-wide">
-                  TILT MASTER!
-                </h2>
+                <h2 className="text-3xl font-display text-foreground tracking-wide">TILT MASTER!</h2>
                 <p className="text-foreground/80 leading-relaxed text-lg font-semibold">
                   Become a tilting LEGEND! Wobble your head like a pro and master the ultimate tilt challenge!
                 </p>
