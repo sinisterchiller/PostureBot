@@ -27,9 +27,6 @@ def root():
 class command(BaseModel):
     game: int
 
-base_dir = Path("gamekoushik")
-venv_python = base_dir / ".venv/bin/python"
-
 @api.post("/game")
 def opengame(data:command):
     gamerec = data.game
@@ -41,8 +38,24 @@ def opengame(data:command):
         results3 = subprocess.Popen([".venv/bin/uvicorn", "koushikbackend:api", "--reload"])
         print(results3.stdout)
     if gamerec == 1:
-        results1 = subprocess.Popen([".venv/bin/python", "gameishayat/headtilt_game.py"])
-        print(results1.stdout)
-        results3 = subprocess.Popen([".venv/bin/uvicorn", "ishayatbackend:api", "--reload"])
-        print(results3.stdout)
+        results4 = subprocess.Popen([".venv/bin/python", "gameishayat/headtilt_game.py"])
+        print(results4.stdout)
+        results5 = subprocess.Popen([".venv/bin/uvicorn", "ishayatbackend:api", "--reload"])
+        print(results5.stdout)
+    return {"ok" : True}
+
+
+class modecomm(BaseModel):
+    mode: int
+
+@api.post("/mode")
+def opengame(data:modecomm):
+    moderec = data.mode
+    if moderec == 0:
+        pass
+    if moderec == 1:
+        results1 = subprocess.Popen([".venv/bin/python", "consequence/posturemonitor.py"])
+        print(results1)
+        results2 = subprocess.Popen([".venv/bin/uvicorn", "koushikbackend:api", "--reload"])
+        print(results2.stdout)
     return {"ok" : True}
