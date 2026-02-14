@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { SillyTilter } from '@/components/silly-tilter'
-import { Gamepad2, Users, ShieldAlert } from 'lucide-react'
+import { Gamepad2, Users, ShieldAlert, Power } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 export default function Page() {
@@ -92,6 +92,30 @@ export default function Page() {
     }
   }
 
+  const closeAll = async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:2301/close', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ close: 1 }),
+      })
+      if (!response.ok) throw new Error('Close request failed')
+      setPoliceModeEnabled(false)
+      setActiveGame(null)
+      toast({
+        title: 'All closed',
+        description: 'Camera, games, and monitoring have been stopped.',
+      })
+    } catch (error) {
+      console.error('Failed to close all:', error)
+      toast({
+        title: 'Connection Error',
+        description: 'Could not reach backend at 127.0.0.1:2301.',
+        variant: 'destructive',
+      })
+    }
+  }
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       (window as any).triggerBadPostureGame = handleBadPosture
@@ -128,7 +152,7 @@ export default function Page() {
           </p>
         </div>
 
-        <div className="flex justify-center">
+        <div className="flex justify-center gap-4 flex-wrap">
           <Button
             onClick={() => setPoliceMode(!policeModeEnabled)}
             variant={policeModeEnabled ? 'destructive' : 'outline'}
@@ -141,6 +165,15 @@ export default function Page() {
           >
             <ShieldAlert className="w-6 h-6 mr-2" />
             {policeModeEnabled ? 'POLICE MODE: ON' : 'ACTIVATE POLICE MODE'}
+          </Button>
+          <Button
+            onClick={closeAll}
+            variant="outline"
+            size="lg"
+            className="font-display text-xl tracking-wider hover:scale-105"
+          >
+            <Power className="w-6 h-6 mr-2" />
+            CLOSE ALL
           </Button>
         </div>
 
