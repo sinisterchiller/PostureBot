@@ -40,4 +40,9 @@ def opengame(data:command):
         print(results2.stdout)
         results3 = subprocess.Popen([".venv/bin/uvicorn", "koushikbackend:api", "--reload"])
         print(results3.stdout)
+    if gamerec == 1:
+        results1 = subprocess.Popen([".venv/bin/python", "gameishayat/headtilt_game.py"])
+        print(results1.stdout)
+        results3 = subprocess.Popen([".venv/bin/uvicorn", "ishayatbackend:api", "--reload"])
+        print(results3.stdout)
     return {"ok" : True}
