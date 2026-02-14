@@ -7,7 +7,7 @@ from mediapipe.tasks.python import vision
 import requests
 from collections import deque
 
-API_URL = "http://127.0.0.1:8000/headtilt"
+API_URL = "http://127.0.0.1:7000/headtilt"
 MODEL_PATH = "gameishayat/pose_landmarker_full.task"
 
 def calculate_head_tilt(lm):
@@ -208,7 +208,7 @@ print("="*80)
 def start_mode(mode):
     """Start specific mode"""
     try:
-        r = requests.post(f"http://127.0.0.1:8000/game/start?mode={mode}", timeout=2)
+        r = requests.post(f"http://127.0.0.1:7000/game/start?mode={mode}", timeout=2)
         if r.status_code == 200:
             game["question"] = r.json()
             game["q_start"] = time.time()
@@ -237,7 +237,7 @@ def start_mode(mode):
 def next_question():
     """Get next question"""
     try:
-        r = requests.get("http://127.0.0.1:8000/game/next", timeout=2)
+        r = requests.get("http://127.0.0.1:7000/game/next", timeout=2)
         if r.status_code == 200:
             data = r.json()
             
@@ -269,7 +269,7 @@ def submit(side, ready):
     print(f"\n✅ {side}")
     
     try:
-        r = requests.post("http://127.0.0.1:8000/game/answer", json={
+        r = requests.post("http://127.0.0.1:7000/game/answer", json={
             "question_id": game["question"]["id"],
             "selected_side": side.upper(),
             "response_time": rt
@@ -291,7 +291,7 @@ def exit_to_menu():
     """Exit to main menu"""
     if game["active"]:
         try:
-            r = requests.post("http://127.0.0.1:8000/game/end", timeout=2)
+            r = requests.post("http://127.0.0.1:7000/game/end", timeout=2)
             if r.status_code == 200:
                 data = r.json()
                 stats = data.get("final_stats", {})
@@ -428,7 +428,7 @@ try:
                 
                 # Stats
                 try:
-                    sr = requests.get("http://127.0.0.1:8000/game/stats", timeout=0.3)
+                    sr = requests.get("http://127.0.0.1:7000/game/stats", timeout=0.3)
                     if sr.status_code == 200:
                         st = sr.json()
                         sb = frame.copy()

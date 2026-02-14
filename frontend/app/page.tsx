@@ -40,7 +40,7 @@ export default function Page() {
     setActiveGame(gameId)
     
     try {
-      const response = await fetch('http://127.0.0.1:8000/game', {
+      const response = await fetch('http://127.0.0.1:2301/game', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
