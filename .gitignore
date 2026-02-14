@@ -1,4 +1,4 @@
-venv/
+cdvenv/
 .venv/
 **/.venv/
 .DS_Store
