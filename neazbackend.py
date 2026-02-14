@@ -66,10 +66,31 @@ class modecomm(BaseModel):
 def opengame(data:modecomm):
     moderec = data.mode
     if moderec == 0:
-        pass
+        subprocess.Popen(["pkill", "-f", "posturemonitor.py"])
+        subprocess.Popen(["pkill", "-f", "koushikbackend.py"])
+        subprocess.Popen(["pkill", "-f", "headtilt_game.py"])
+        subprocess.Popen(["pkill", "-f", "posturetest_koushik.py"])
+        subprocess.Popen(["pkill", "-f", "trafficgame.py"])
+        subprocess.Popen(["pkill", "-f", "ishayatbacked.py"])
     if moderec == 1:
         results1 = subprocess.Popen([".venv/bin/python", "consequence/posturemonitor.py"])
         print(results1)
         results2 = subprocess.Popen([".venv/bin/uvicorn", "koushikbackend:api", "--reload"])
         print(results2.stdout)
+    return {"ok" : True}
+
+class closecom(BaseModel):
+    close: int
+
+@api.post("/close")
+def close(data:closecom):
+    closerec = data.close
+    if closerec == 1:
+        subprocess.Popen(["pkill", "-f", "posturemonitor.py"])
+        subprocess.Popen(["pkill", "-f", "koushikbackend.py"])
+        subprocess.Popen(["pkill", "-f", "headtilt_game.py"])
+        subprocess.Popen(["pkill", "-f", "posturetest_koushik.py"])
+        subprocess.Popen(["pkill", "-f", "trafficgame.py"])
+        subprocess.Popen(["pkill", "-f", "ishayatbacked.py"])
+        closerec = 0
     return {"ok" : True}
